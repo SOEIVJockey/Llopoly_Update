@@ -8,16 +8,15 @@ public class HexMap : MonoBehaviour
 {
     private static char delimeter = ',';
     private static hexCell[,] map;
-    private static Material[] mats;
-    private static PhysicMaterial[] pMats;
+    private static UnityEngine.Object[] mats = new UnityEngine.Object[0], pMats = mats, prefabs = mats;
     private static string shader = "Standard";
     private static Transform parentMap;
 
     internal static void LoadMap(string sysPath, string texturesAndPhysicsPath)//call this to load map
     {
         parentMap = new GameObject().transform; 
-        loadTexturesAndPhysics(texturesAndPhysicsPath);
-        readMap(sysPath); //setup tiles        
+        readMap(sysPath); //setup tiles      
+        loadTexturesAndPhysicsPrefabs(texturesAndPhysicsPath);
         foreach (hexCell cell in map) //apply mesh's
         {
             if (cell.type == "X")//impassable terrain settings
@@ -29,33 +28,34 @@ public class HexMap : MonoBehaviour
             {
                 cell.obj.GetComponent<MeshFilter>().mesh = addMesh(cell);
                 cell.obj.GetComponent<MeshCollider>().sharedMesh = cell.obj.GetComponent<MeshFilter>().mesh;
-                if (mats.Length >= cell.landType + 1)
+                if (mats.Length > cell.landType)
                 {
-                    cell.obj.GetComponent<MeshRenderer>().material = mats[cell.landType];
+                    cell.obj.GetComponent<MeshRenderer>().material = (Material)mats[cell.landType];
                 }
-                if (mats.Length >= cell.landType + 1)
+                if (pMats.Length > cell.landType)
                 {
-                    cell.obj.GetComponent<MeshCollider>().material = pMats[cell.landType];
+                    cell.obj.GetComponent<MeshCollider>().material = (PhysicMaterial)pMats[cell.landType];
                 }
             }
             cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
+            if (cell.tObject != "N")
+            {
+                var go = assignObject(cell.tObject);
+                if (go != null)
+                {
+                    go = Instantiate(assignObject(cell.tObject));
+                    go.transform.position = cell.obj.transform.position + (Vector3.up * go.GetComponent<Collider>().bounds.extents.y / 2);
+                    go.transform.SetParent(cell.obj.transform);
+                }
+            }
             cell.obj.transform.SetParent(parentMap);
         }
     }
-    private static void loadTexturesAndPhysics(string path)
+    private static void loadTexturesAndPhysicsPrefabs(string path)
     {
-        UnityEngine.Object[] tempMats = Resources.LoadAll(path+"/Materials");
-        mats = new Material[tempMats.Length]; 
-        UnityEngine.Object[] tempPMats = Resources.LoadAll(path+"/Physics");
-        mats = new Material[tempPMats.Length];
-        for (int i = 0; i < tempMats.Length; i++)
-        {
-            mats[i] = (Material)tempMats[i];
-        }
-        for (int i = 0; i < tempPMats.Length; i++)
-        {
-            pMats[i] = (PhysicMaterial)tempPMats[i];
-        }
+        mats = Resources.LoadAll(path + "Materials");
+        pMats = Resources.LoadAll(path + "Physics");
+        prefabs = Resources.LoadAll(path + "Objects");
     }
     private static void readMap(string path)
     {
@@ -77,13 +77,12 @@ public class HexMap : MonoBehaviour
         {
             for (int j = 0; j < mapHeight; j++) //create tile
             {
-                map[i, j] = new hexCell()
+                map[i, j] = new hexCell()//X00N00
                 {
                     type = lines[j].Split(delimeter)[i][0].ToString().ToUpper(),
-                    landType = int.Parse((lines[j].Split(delimeter)[i][1] +""+ lines[j].Split(delimeter)[i][1]).ToString()),
-                    road = (lines[j].Split(delimeter)[i][3]).ToString().ToUpper(),
-                    tObject = (lines[j].Split(delimeter)[i][4]).ToString().ToUpper(),
-                    height = int.Parse((lines[j].Split(delimeter)[i][5] + "" + lines[j].Split(delimeter)[i][6]).ToString()),
+                    landType = int.Parse((lines[j].Split(delimeter)[i][1] +""+ lines[j].Split(delimeter)[i][2]).ToString()),
+                    tObject = (lines[j].Split(delimeter)[i][3]).ToString().ToUpper(),
+                    height = int.Parse((lines[j].Split(delimeter)[i][4] + "" + lines[j].Split(delimeter)[i][5]).ToString()),
                     x = i,
                     y = j
                 };
@@ -229,11 +228,28 @@ public class HexMap : MonoBehaviour
         }
         return retval;
     }
+    private static GameObject assignObject(string obj)
+    {
+        int i = 0;
+        if (prefabs.Length > 0)
+        {
+            foreach (var item in prefabs)
+            {
+                if (obj == prefabs[i].name)
+                {
+                    return (GameObject)prefabs[i];
+                }
+                i++;
+            }
+        }
+        return null;
+    }
 }
+
 internal class hexCell
 {
     [SerializeField]
-    internal string type = string.Empty, road = string.Empty, tObject = string.Empty;
+    internal string type = string.Empty, tObject = string.Empty;
     internal GameObject obj = null;
     [SerializeField]
     internal int x = 0, y = 0, landType = 0;
