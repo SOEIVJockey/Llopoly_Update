@@ -28,22 +28,22 @@ public class HexMap : MonoBehaviour
             {
                 cell.obj.GetComponent<MeshFilter>().mesh = addMesh(cell);
                 cell.obj.GetComponent<MeshCollider>().sharedMesh = cell.obj.GetComponent<MeshFilter>().mesh;
-                if (mats.Length > cell.landType)
+                if (mats.Length > int.Parse(cell.landType))
                 {
-                    cell.obj.GetComponent<MeshRenderer>().material = (Material)mats[cell.landType];
+                    cell.obj.GetComponent<MeshRenderer>().material = (Material)assignObject(cell.landType.ToString(), mats);
                 }
-                if (pMats.Length > cell.landType)
+                if (pMats.Length > int.Parse(cell.landType))
                 {
-                    cell.obj.GetComponent<MeshCollider>().material = (PhysicMaterial)pMats[cell.landType];
+                    cell.obj.GetComponent<MeshCollider>().material = (PhysicMaterial)assignObject(cell.landType.ToString(), pMats);
                 }
             }
             cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
             if (cell.tObject != "N")
             {
-                var go = assignObject(cell.tObject);
-                if (go != null)
+                var g = (GameObject)assignObject(cell.tObject, prefabs);
+                if (g != null)
                 {
-                    go = Instantiate(assignObject(cell.tObject));
+                    var go = Instantiate(g);
                     go.transform.position = cell.obj.transform.position + (Vector3.up * go.GetComponent<Collider>().bounds.extents.y / 2);
                     go.transform.SetParent(cell.obj.transform);
                 }
@@ -80,7 +80,7 @@ public class HexMap : MonoBehaviour
                 map[i, j] = new hexCell()//X00N00
                 {
                     type = lines[j].Split(delimeter)[i][0].ToString().ToUpper(),
-                    landType = int.Parse((lines[j].Split(delimeter)[i][1] +""+ lines[j].Split(delimeter)[i][2]).ToString()),
+                    landType = (lines[j].Split(delimeter)[i][1] +""+ lines[j].Split(delimeter)[i][2]).ToString(),
                     tObject = (lines[j].Split(delimeter)[i][3]).ToString().ToUpper(),
                     height = int.Parse((lines[j].Split(delimeter)[i][4] + "" + lines[j].Split(delimeter)[i][5]).ToString()),
                     x = i,
@@ -228,16 +228,16 @@ public class HexMap : MonoBehaviour
         }
         return retval;
     }
-    private static GameObject assignObject(string obj)
+    private static UnityEngine.Object assignObject(string obj, UnityEngine.Object[] objs)
     {
         int i = 0;
-        if (prefabs.Length > 0)
+        if (objs.Length > 0)
         {
             foreach (var item in prefabs)
             {
-                if (obj == prefabs[i].name)
+                if (obj == objs[i].name)
                 {
-                    return (GameObject)prefabs[i];
+                    return prefabs[i];
                 }
                 i++;
             }
@@ -249,10 +249,10 @@ public class HexMap : MonoBehaviour
 internal class hexCell
 {
     [SerializeField]
-    internal string type = string.Empty, tObject = string.Empty;
+    internal string type = string.Empty, tObject = string.Empty, landType = string.Empty;
     internal GameObject obj = null;
     [SerializeField]
-    internal int x = 0, y = 0, landType = 0;
+    internal int x = 0, y = 0;
     internal float innerRadius = 1;
     internal float outerRadius()
     {
