@@ -1,28 +1,62 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class HexMap : MonoBehaviour
 {
-    //private string sysPath = "Assets/" + "1.txt";;
     private static char delimeter = ',';
     private static hexCell[,] map;
+    private static Material[] mats;
+    private static PhysicMaterial[] pMats;
+    private static string shader = "Standard";
+    private static Transform parentMap;
 
-    internal static void LoadMap(string sysPath)//call this to load map
+    internal static void LoadMap(string sysPath, string texturesAndPhysicsPath)//call this to load map
     {
-        readMap(sysPath); //setup tiles
+        parentMap = new GameObject().transform; 
+        loadTexturesAndPhysics(texturesAndPhysicsPath);
+        readMap(sysPath); //setup tiles        
         foreach (hexCell cell in map) //apply mesh's
         {
-            if (cell.obj != null)
+            if (cell.type == "X")//impassable terrain settings
+            {
+                cell.obj.GetComponent<CapsuleCollider>().height = 100;
+                cell.obj.GetComponent<CapsuleCollider>().radius = cell.outerRadius();
+            }
+            else
             {
                 cell.obj.GetComponent<MeshFilter>().mesh = addMesh(cell);
                 cell.obj.GetComponent<MeshCollider>().sharedMesh = cell.obj.GetComponent<MeshFilter>().mesh;
-                cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius() * 2 + (cell.y % 2 == 0 ? cell.innerRadius() : 0), 0, cell.y * 3 / 2f);
+                if (mats.Length >= cell.landType + 1)
+                {
+                    cell.obj.GetComponent<MeshRenderer>().material = mats[cell.landType];
+                }
+                if (mats.Length >= cell.landType + 1)
+                {
+                    cell.obj.GetComponent<MeshCollider>().material = pMats[cell.landType];
+                }
             }
+            cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
+            cell.obj.transform.SetParent(parentMap);
         }
     }
-
+    private static void loadTexturesAndPhysics(string path)
+    {
+        UnityEngine.Object[] tempMats = Resources.LoadAll(path+"/Materials");
+        mats = new Material[tempMats.Length]; 
+        UnityEngine.Object[] tempPMats = Resources.LoadAll(path+"/Physics");
+        mats = new Material[tempPMats.Length];
+        for (int i = 0; i < tempMats.Length; i++)
+        {
+            mats[i] = (Material)tempMats[i];
+        }
+        for (int i = 0; i < tempPMats.Length; i++)
+        {
+            pMats[i] = (PhysicMaterial)tempPMats[i];
+        }
+    }
     private static void readMap(string path)
     {
         int mapHeight = 0, mapWidth = 1;
@@ -43,28 +77,26 @@ public class HexMap : MonoBehaviour
         {
             for (int j = 0; j < mapHeight; j++) //create tile
             {
-                if (lines[j].Split(delimeter)[i] != "x")
+                map[i, j] = new hexCell()
                 {
-                    map[i, j] = new hexCell()
-                    {
-                        obj = new GameObject("HexCell:" + i + delimeter + j + delimeter + "H" + int.Parse(lines[j].Split(delimeter)[i]), typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider)),
-                        height = int.Parse(lines[j].Split(delimeter)[i]),
-                        x = i,
-                        y = j
-                    };
-                    map[i, j].obj.GetComponent<Renderer>().material.shader = Shader.Find("Standard");
-                }
-                else
-                {
-                    map[i, j] = new hexCell();
-                }
+                    type = lines[j].Split(delimeter)[i][0].ToString().ToUpper(),
+                    landType = int.Parse((lines[j].Split(delimeter)[i][1] +""+ lines[j].Split(delimeter)[i][1]).ToString()),
+                    road = (lines[j].Split(delimeter)[i][3]).ToString().ToUpper(),
+                    tObject = (lines[j].Split(delimeter)[i][4]).ToString().ToUpper(),
+                    height = int.Parse((lines[j].Split(delimeter)[i][5] + "" + lines[j].Split(delimeter)[i][6]).ToString()),
+                    x = i,
+                    y = j
+                };
+                map[i, j].obj = (map[i, j].type == "X") ? new GameObject("HexCell:" + i + delimeter + j, typeof(MeshFilter), typeof(MeshRenderer), typeof(CapsuleCollider))
+                                                 : new GameObject("HexCell:" + i + delimeter + j + delimeter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+                map[i, j].obj.GetComponent<Renderer>().material.shader = Shader.Find(shader);
             }
         }
     }
     private static Mesh addMesh(hexCell hexCell)
     {
         Mesh mesh = new Mesh();
-        float innerRadius = hexCell.innerRadius(), outerRadius = hexCell.outerRadius;
+        float innerRadius = hexCell.innerRadius, outerRadius = hexCell.outerRadius();
         Vector3[] corners = new Vector3[] //hexagon coordinates from centre + maxheight of point neighbours + self
         {
             new Vector3(0f, Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 1)), getHeight(hexCell, 2)), outerRadius),
@@ -95,7 +127,7 @@ public class HexMap : MonoBehaviour
         }
         for (int i = 0; i < vertices.Count; i++)
         {
-           if (vertices[i] == hexCell.obj.transform.localPosition) //set centre point height
+            if (vertices[i] == hexCell.obj.transform.localPosition) //set centre point height
             {
                 float x = (getHeight(hexCell, 1) + getHeight(hexCell, 2) + getHeight(hexCell, 3) + getHeight(hexCell, 4) + getHeight(hexCell, 5) + getHeight(hexCell, 6)) / 6;
                 vertices[i] = new Vector3(vertices[i].x, Math.Max(x, hexCell.height), vertices[i].y);
@@ -116,28 +148,40 @@ public class HexMap : MonoBehaviour
             switch (cell)
             {
                 case 1:
-                    if (!(yOverMax || xUnderMin)) retval += map[hexCell.x - 1, hexCell.y + 1].height; //up left
-                    else { retval += hexCell.height; }
+                    if (!(yOverMax || xUnderMin) && (map[hexCell.x - 1, hexCell.y + 1].type != "F" || map[hexCell.x - 1, hexCell.y + 1].type != "U"))
+                        retval += map[hexCell.x - 1, hexCell.y + 1].height; //up left
+                    else
+                        retval += hexCell.height;
                     break;
                 case 2:
-                    if (!yOverMax) retval += map[hexCell.x, hexCell.y + 1].height; //up right
-                    else { retval += hexCell.height; }
+                    if (!yOverMax && (map[hexCell.x, hexCell.y + 1].type != "F" || map[hexCell.x, hexCell.y + 1].type != "U"))
+                        retval += map[hexCell.x, hexCell.y + 1].height; //up right
+                    else
+                        retval += hexCell.height;
                     break;
                 case 3:
-                    if (!xOverMax) retval += map[hexCell.x + 1, hexCell.y].height; //centre right
-                    else { retval += hexCell.height; }
+                    if (!xOverMax && (map[hexCell.x + 1, hexCell.y].type != "F" || map[hexCell.x + 1, hexCell.y].type != "U"))
+                        retval += map[hexCell.x + 1, hexCell.y].height; //centre right
+                    else
+                        retval += hexCell.height;
                     break;
                 case 4:
-                    if (!yUnderMin) retval += map[hexCell.x, hexCell.y - 1].height; //down right
-                    else { retval += hexCell.height; }
+                    if (!yUnderMin && (map[hexCell.x, hexCell.y - 1].type != "F" || map[hexCell.x, hexCell.y - 1].type != "U"))
+                        retval += map[hexCell.x, hexCell.y - 1].height; //down right
+                    else
+                        retval += hexCell.height;
                     break;
                 case 5:
-                    if (!(yUnderMin || xUnderMin)) retval += map[hexCell.x -1, hexCell.y - 1].height;// down left
-                    else { retval += hexCell.height; }
+                    if (!(yUnderMin || xUnderMin) && (map[hexCell.x - 1, hexCell.y - 1].type != "F" || map[hexCell.x - 1, hexCell.y - 1].type != "U"))
+                        retval += map[hexCell.x - 1, hexCell.y - 1].height;// down left
+                    else
+                        retval += hexCell.height;
                     break;
                 default:
-                    if (!xUnderMin) retval += map[hexCell.x - 1, hexCell.y].height; //centre left
-                    else { retval += hexCell.height; }
+                    if (!xUnderMin && (map[hexCell.x - 1, hexCell.y].type != "F" || map[hexCell.x - 1, hexCell.y].type != "U"))
+                        retval += map[hexCell.x - 1, hexCell.y].height; //centre left
+                    else
+                        retval += hexCell.height;
                     break;
             }
         }
@@ -146,28 +190,40 @@ public class HexMap : MonoBehaviour
             switch (cell)
             {
                 case 1:
-                    if (!yOverMax) retval += map[hexCell.x, hexCell.y + 1].height; //up left
-                    else { retval += hexCell.height; }
+                    if (!yOverMax && (map[hexCell.x, hexCell.y + 1].type != "F" || map[hexCell.x, hexCell.y + 1].type != "U"))
+                        retval += map[hexCell.x, hexCell.y + 1].height; //up left
+                    else
+                        retval += hexCell.height;
                     break;
                 case 2:
-                    if (!(xOverMax || yOverMax)) retval += map[hexCell.x + 1, hexCell.y + 1].height; //up right
-                    else { retval += hexCell.height; }
+                    if (!(xOverMax || yOverMax) && (map[hexCell.x + 1, hexCell.y + 1].type != "F" || map[hexCell.x + 1, hexCell.y + 1].type != "U"))
+                        retval += map[hexCell.x + 1, hexCell.y + 1].height; //up right
+                    else
+                        retval += hexCell.height;
                     break;
                 case 3:
-                    if (!xOverMax) retval += map[hexCell.x + 1, hexCell.y].height; //centre right
-                    else { retval += hexCell.height; }
+                    if (!xOverMax && (map[hexCell.x + 1, hexCell.y].type != "F" || map[hexCell.x + 1, hexCell.y].type != "U"))
+                        retval += map[hexCell.x + 1, hexCell.y].height; //centre right
+                    else
+                        retval += hexCell.height;
                     break;
                 case 4:
-                    if (!(yUnderMin || xOverMax)) retval += map[hexCell.x + 1, hexCell.y - 1].height; //down right
-                    else { retval += hexCell.height; }
+                    if (!(yUnderMin || xOverMax) && (map[hexCell.x + 1, hexCell.y - 1].type != "F" || map[hexCell.x + 1, hexCell.y - 1].type != "U"))
+                        retval += map[hexCell.x + 1, hexCell.y - 1].height; //down right
+                    else
+                        retval += hexCell.height;
                     break;
                 case 5:
-                    if (!(xUnderMin || yUnderMin)) retval += map[hexCell.x, hexCell.y - 1].height;// down left
-                    else { retval += hexCell.height; }
+                    if (!(xUnderMin || yUnderMin) && (map[hexCell.x, hexCell.y - 1].type != "F" || map[hexCell.x, hexCell.y - 1].type != "U"))
+                        retval += map[hexCell.x, hexCell.y - 1].height;// down left
+                    else
+                        retval += hexCell.height;
                     break;
                 default:
-                    if (!xUnderMin) retval += map[hexCell.x - 1, hexCell.y].height; //centre left
-                    else { retval += hexCell.height; }
+                    if (!xUnderMin && (map[hexCell.x - 1, hexCell.y].type != "F" || map[hexCell.x - 1, hexCell.y].type != "U"))
+                        retval += map[hexCell.x - 1, hexCell.y].height; //centre left
+                    else
+                        retval += hexCell.height;
                     break;
             }
         }
@@ -176,12 +232,15 @@ public class HexMap : MonoBehaviour
 }
 internal class hexCell
 {
+    [SerializeField]
+    internal string type = string.Empty, road = string.Empty, tObject = string.Empty;
     internal GameObject obj = null;
-    internal float outerRadius = 1;
-    internal int x = 0, y = 0;
-    internal float innerRadius()
+    [SerializeField]
+    internal int x = 0, y = 0, landType = 0;
+    internal float innerRadius = 1;
+    internal float outerRadius()
     {
-        return outerRadius * 0.866025404f;
+        return innerRadius + (1547 / 10000);
     }
-    internal int height = 0;   
+    internal int height = 0;
 }

@@ -7,7 +7,7 @@ public class NewBehaviourScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        HexMap.LoadMap("Assets/Scripts/TestMap01.txt");
+        HexMap.LoadMap("Assets/Scripts/TestMap01.txt", "Map/");
     }
 
     // Update is called once per frame
