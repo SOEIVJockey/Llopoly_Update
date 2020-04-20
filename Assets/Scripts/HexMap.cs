@@ -73,9 +73,9 @@ public class HexMap : MonoBehaviour
             }
         }
         map = new hexCell[mapWidth, mapHeight];
-        for (int i = 0; i < mapWidth; i++)
+        for (int i = 0; i < map.GetLength(0); i++)
         {
-            for (int j = 0; j < mapHeight; j++) //create tile
+            for (int j = map.GetLength(1)-1; j > -1; j--) //create tile
             {
                 map[i, j] = new hexCell()//X00N00
                 {
