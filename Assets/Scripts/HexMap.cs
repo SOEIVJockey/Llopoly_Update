@@ -75,14 +75,15 @@ public class HexMap : MonoBehaviour
         map = new hexCell[mapWidth, mapHeight];
         for (int i = 0; i < map.GetLength(0); i++)
         {
-            for (int j = map.GetLength(1)-1; j > -1; j--) //create tile
+            for (int j = 0; j < map.GetLength(1); j++) //create tile
             {
-                map[i, j] = new hexCell()//X00N00
+                var line = lines[(lines.Length-1) - j]
+;                map[i, j] = new hexCell()//X00N00
                 {
-                    type = lines[j].Split(delimeter)[i][0].ToString().ToUpper(),
-                    landType = (lines[j].Split(delimeter)[i][1] +""+ lines[j].Split(delimeter)[i][2]).ToString(),
-                    tObject = (lines[j].Split(delimeter)[i][3]).ToString().ToUpper(),
-                    height = int.Parse((lines[j].Split(delimeter)[i][4] + "" + lines[j].Split(delimeter)[i][5]).ToString()),
+                    type = line.Split(delimeter)[i][0].ToString().ToUpper(),
+                    landType = (line.Split(delimeter)[i][1] +""+ line.Split(delimeter)[i][2]).ToString(),
+                    tObject = (line.Split(delimeter)[i][3]).ToString().ToUpper(),
+                    height = int.Parse((line.Split(delimeter)[i][4] + "" + line.Split(delimeter)[i][5]).ToString()),
                     x = i,
                     y = j
                 };

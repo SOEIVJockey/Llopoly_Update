@@ -25,6 +25,6 @@ public class Daylight_Behavior : MonoBehaviour
     {
         rotateSun += sunSpeed * Time.fixedDeltaTime;
         sun.rotation = Quaternion.Euler(0, rotateSun, 0);
-        sunSettings.intensity = (((Mathf.Sin(sun.rotation.y / Mathf.PI)) / 2) + .5f);
+        sunSettings.intensity = 0.5f + Mathf.Sin(sun.rotation.y / Mathf.PI) / 2;
     }
 }

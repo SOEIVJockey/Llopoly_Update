@@ -77,8 +77,7 @@ public class Camera_Follow : MonoBehaviour
 
     void ViewObstructed()
     {        
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, target.position - transform.position, out hit, 4.5f))
+        if (Physics.Raycast(transform.position, target.position - transform.position, out RaycastHit hit, 4.5f))
         {
             if (hit.collider.gameObject.tag != "Player")
             {
