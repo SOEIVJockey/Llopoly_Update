@@ -30,11 +30,11 @@ public class HexMap : MonoBehaviour
                 cell.obj.GetComponent<MeshCollider>().sharedMesh = cell.obj.GetComponent<MeshFilter>().mesh;
                 if (mats.Length > int.Parse(cell.landType))
                 {
-                    cell.obj.GetComponent<MeshRenderer>().material = (Material)assignObject(cell.landType.ToString(), mats);
+                    cell.obj.GetComponent<MeshRenderer>().material = (Material)assignObject(cell.landType, mats);
                 }
                 if (pMats.Length > int.Parse(cell.landType))
                 {
-                    cell.obj.GetComponent<MeshCollider>().material = (PhysicMaterial)assignObject(cell.landType.ToString(), pMats);
+                    cell.obj.GetComponent<MeshCollider>().material = (PhysicMaterial)assignObject(cell.landType, pMats);
                 }
             }
             cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
@@ -233,11 +233,11 @@ public class HexMap : MonoBehaviour
         int i = 0;
         if (objs.Length > 0)
         {
-            foreach (var item in prefabs)
+            foreach (var item in objs)
             {
                 if (obj == objs[i].name)
                 {
-                    return prefabs[i];
+                    return objs[i];
                 }
                 i++;
             }
