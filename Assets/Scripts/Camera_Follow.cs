@@ -31,16 +31,17 @@ public class Camera_Follow : MonoBehaviour
 
     void FixedUpdate()
     {
+        CamControl();
+        //ViewObstructed(); - Basic Script for seeing through walls.
+        scroll = Input.GetAxis("Mouse ScrollWheel");
+        transform.Translate(0, 0, scroll * Time.deltaTime * zoomSpeed);
     }
 
     // Update is called once per frame
 
     void LateUpdate()
     {
-        CamControl();
-        //ViewObstructed(); - Basic Script for seeing through walls.
-        scroll = Input.GetAxis("Mouse ScrollWheel");
-        transform.Translate(0,0,scroll*Time.deltaTime * zoomSpeed);
+        
     }
 
     void CamControl() //Reposition camera on middle mouse down.
@@ -66,8 +67,8 @@ public class Camera_Follow : MonoBehaviour
              *
              */
 
-            yaw += Input.GetAxis("Mouse X") * rotationSpeed * Time.deltaTime;
-            pitch -= Input.GetAxis("Mouse Y") * rotationSpeed * Time.deltaTime;
+            yaw += Input.GetAxis("Mouse X") * rotationSpeed * Time.fixedDeltaTime;
+            pitch -= Input.GetAxis("Mouse Y") * rotationSpeed * Time.fixedDeltaTime;
             pitch = Mathf.Clamp(pitch, 0, 50);                                
             target.rotation = Quaternion.Euler(pitch, yaw, 0);
             player.rotation = Quaternion.Euler(0, yaw, 0);
