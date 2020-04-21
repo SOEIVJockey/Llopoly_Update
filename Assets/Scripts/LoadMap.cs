@@ -7,6 +7,6 @@ public class LoadMap : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        HexMap.LoadMap("Assets/Scripts/TestMap01.txt", "Map/");
+        HexMap.LoadMap(transform, "Assets/Scripts/TestMap01.txt", "Map/");
     }
 }
