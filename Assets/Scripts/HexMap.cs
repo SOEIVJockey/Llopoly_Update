@@ -12,21 +12,21 @@ public class HexMap : MonoBehaviour
 
     internal static void LoadMap(Transform t, string sysPath, string texturesAndPhysicsPath)//call this to load map
     {
-        parentMap = t; 
+        parentMap = t;
         readMap(sysPath); //setup tiles      
         loadTexturesAndPhysicsPrefabs(texturesAndPhysicsPath);
         foreach (hexCell cell in map) //apply mesh's
         {
             bool flat = cell.type == "F" || cell.type == "U";
-            if (cell.type == "X")//impassable terrain settings
+            if (cell.type == "X")//impassable component settings
             {
                 cell.obj.GetComponent<CapsuleCollider>().height = 100;
                 cell.obj.GetComponent<CapsuleCollider>().radius = cell.outerRadius();
-                cell.obj.GetComponent<MeshFilter>().mesh = addMesh(cell, flat);
+                cell.obj.GetComponent<MeshFilter>().mesh = addHexMesh(cell, flat);
             }
-            else
+            else // all other tile component settings
             {
-                cell.obj.GetComponent<MeshFilter>().mesh = addMesh(cell, flat);
+                cell.obj.GetComponent<MeshFilter>().mesh = addHexMesh(cell, flat);
                 cell.obj.GetComponent<MeshCollider>().sharedMesh = cell.obj.GetComponent<MeshFilter>().mesh;
                 if (mats.Length > int.Parse(cell.landType))
                 {
@@ -38,11 +38,11 @@ public class HexMap : MonoBehaviour
                 }
             }
             cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
-            if (flat)
+            if (flat) //forceflat's need walls
             {
                 addWalls(cell);
             }
-            if (cell.tObject != "N")
+            if (cell.tObject != "N") //cell object spawn
             {
                 var g = (GameObject)assignObject(cell.tObject, prefabs);
                 if (g != null)
@@ -83,41 +83,33 @@ public class HexMap : MonoBehaviour
         {
             for (int j = 0; j < map.GetLength(1); j++) //create tile
             {
-                var line = lines[(lines.Length-1) - j]
-;                map[i, j] = new hexCell()//X00N00
+                var line = lines[(lines.Length - 1) - j];
+                map[i, j] = new hexCell()
                 {
                     type = line.Split(delimeter)[i][0].ToString().ToUpper(),
-                    landType = (line.Split(delimeter)[i][1] +""+ line.Split(delimeter)[i][2]).ToString(),
+                    landType = (line.Split(delimeter)[i][1] + "" + line.Split(delimeter)[i][2]).ToString(),
                     tObject = (line.Split(delimeter)[i][3]).ToString().ToUpper(),
                     height = int.Parse((line.Split(delimeter)[i][4] + "" + line.Split(delimeter)[i][5]).ToString()),
                     x = i,
                     y = j
                 };
                 map[i, j].obj = (map[i, j].type == "X") ? new GameObject("HexCell:" + i + delimeter + j, typeof(MeshFilter), typeof(MeshRenderer), typeof(CapsuleCollider))
-                                                 : new GameObject("HexCell:" + i + delimeter + j + delimeter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+                                                        : new GameObject("HexCell:" + i + delimeter + j + delimeter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
                 map[i, j].obj.GetComponent<Renderer>().material.shader = Shader.Find(shader);
             }
         }
     }
-    private static Mesh addMesh(hexCell hexCell, bool flat)
+
+    private static Mesh addHexMesh(hexCell cell, bool flat)
     {
         Mesh mesh = new Mesh();
-        float innerRadius = hexCell.innerRadius, outerRadius = hexCell.outerRadius();
-        Vector3[] corners = new Vector3[] //hexagon coordinates from centre + maxheight of point neighbours + self
-        {
-            new Vector3(0f, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 1)), getHeight(hexCell, 2)), outerRadius),
-            new Vector3(innerRadius, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 2)), getHeight(hexCell, 3)), 0.5f * outerRadius),
-            new Vector3(innerRadius, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 3)), getHeight(hexCell,4)), -0.5f * outerRadius),
-            new Vector3(0f, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 4)), getHeight(hexCell, 5)), -outerRadius),
-            new Vector3(-innerRadius, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 5)), getHeight(hexCell, 6)), -0.5f * outerRadius),
-            new Vector3(-innerRadius, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 6)), getHeight(hexCell, 1)), 0.5f * outerRadius),
-            new Vector3(0f, flat ? hexCell.height : Math.Max(Math.Max(hexCell.height, getHeight(hexCell, 1)), getHeight(hexCell, 2)), outerRadius)
-        };
-
+        float innerRadius = cell.innerRadius, outerRadius = cell.outerRadius();
         List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uv = new List<Vector2>();
         List<int> triangles = new List<int>();
-        Vector3 center = hexCell.obj.transform.localPosition;
+        Vector3 center = cell.obj.transform.localPosition;
+        Vector3[] corners = getCorners(cell);
+
         for (int i = 0; i < 6; i++) //loop through triangles
         {
             int vertexIndex = vertices.Count;
@@ -133,12 +125,13 @@ public class HexMap : MonoBehaviour
         }
         for (int i = 0; i < vertices.Count; i++)
         {
-            if (vertices[i] == hexCell.obj.transform.localPosition) //set centre point height
+            if (vertices[i] == cell.obj.transform.localPosition) //set centre point height
             {
-                float x = flat ? hexCell.height : (getHeight(hexCell, 1) + getHeight(hexCell, 2) + getHeight(hexCell, 3) + getHeight(hexCell, 4) + getHeight(hexCell, 5) + getHeight(hexCell, 6) + hexCell.height) / 7;
-                vertices[i] = new Vector3(vertices[i].x, Math.Max(x, hexCell.height), vertices[i].y);
+                float x = flat ? cell.height : (getHeight(cell, 1) + getHeight(cell, 2) + getHeight(cell, 3) + getHeight(cell, 4) + getHeight(cell, 5) + getHeight(cell, 6) + cell.height) / 7;
+                vertices[i] = new Vector3(vertices[i].x, Math.Max(x, cell.height), vertices[i].y);
             }
         }
+		
         mesh.vertices = vertices.ToArray(); //set mesh properties to mesh
         mesh.triangles = triangles.ToArray();
         mesh.uv = uv.ToArray();
@@ -147,70 +140,54 @@ public class HexMap : MonoBehaviour
     }
     private static void addWalls(hexCell cell)
     {
-        List<Vector3> wallVertices = new List<Vector3>();
+        List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uv = new List<Vector2>();
-        List<int> wallTriangles = new List<int>();
+        List<int> triangles = new List<int>();
         Mesh wallMesh = new Mesh();
-        Vector3[] corners = new Vector3[] //hexagon coordinates from centre + maxheight of point neighbours + self
+        Vector3[] corners = getCorners(cell);
+        for (int i = 0; i < 6; i++) //loop through hexagon sides
         {
-            new Vector3(0f, Math.Max(Math.Max(cell.height, getHeight(cell, 1)), getHeight(cell, 2)), cell.outerRadius()),
-            new Vector3(cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 2)), getHeight(cell, 3)), 0.5f * cell.outerRadius()),
-            new Vector3(cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 3)), getHeight(cell,4)), -0.5f * cell.outerRadius()),
-            new Vector3(0f, Math.Max(Math.Max(cell.height, getHeight(cell, 4)), getHeight(cell, 5)), -cell.outerRadius()),
-            new Vector3(-cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 5)), getHeight(cell, 6)), -0.5f * cell.outerRadius()),
-            new Vector3(-cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 6)), getHeight(cell, 1)), 0.5f * cell.outerRadius())
-        };
-        for (int i = 0; i < 6; i++)
-        {
-            int startIndex = wallVertices.Count;
-            if (corners[i] != corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))) //if i am highest i am equal which is fine unless i am actually equal and my height is 0
+            int startIndex = vertices.Count;
+            if (corners[i] != corners[i] + (heightOverPoint(cell, corners[i]) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))) //if i am highest i am equal which is fine unless i am actually equal and my height is 0
             {
-                wallVertices.Add(corners[i]); // left
-                wallVertices.Add(corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
-                uv.Add(corners[i]); // left
-                uv.Add(corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
-                if (i != 5)
+                vertices.Add(corners[i]); //left
+                vertices.Add(corners[i] + (heightOverPoint(cell, corners[i]) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); //bottom left
+                vertices.Add(corners[1 + i]);//right            
+                vertices.Add(corners[1 + i] + (heightOverPoint(cell, corners[i + 1]) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i + 1].y)))); //bottom right
+
+                uv.Add(corners[i]); //left
+                uv.Add(corners[i] + (heightOverPoint(cell, corners[i]) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); //bottom left
+                uv.Add(corners[i + 1]); //right
+                uv.Add(corners[i + 1] + (heightOverPoint(cell, corners[i + 1]) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i + 1].y)))); //bottom right
+
+                if (heightOverPoint(cell, corners[0]))
                 {
-                    wallVertices.Add(corners[1 + i]);// right            
-                    wallVertices.Add(corners[1 + i] + ((cell.height >= corners[1 + i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[1 + i].y)))); // bottom right
-                    uv.Add(corners[1 + i]);
-                    uv.Add(corners[1 + i] + ((cell.height >= corners[1 + i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[1 + i].y)))); // bottom right
+                    triangles.Add(startIndex + 3);
+                    triangles.Add(startIndex + 2);
+                    triangles.Add(startIndex + 0);
+					
+                    triangles.Add(startIndex + 1);
+                    triangles.Add(startIndex + 3);
+                    triangles.Add(startIndex + 0);
                 }
                 else
                 {
-                    wallVertices.Add(corners[0]);// right
-                    wallVertices.Add(corners[0] + ((cell.height >= corners[0].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[0].y)))); // bottom right
-                    uv.Add(corners[0]);// right
-                    uv.Add(corners[0] + ((cell.height >= corners[0].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[0].y)))); // bottom right
-                }
-                if (cell.height >= corners[0].y)
-                {
-                    wallTriangles.Add(startIndex + 3);
-                    wallTriangles.Add(startIndex + 2);
-                    wallTriangles.Add(startIndex + 0);
-
-                    wallTriangles.Add(startIndex + 1);
-                    wallTriangles.Add(startIndex + 3);
-                    wallTriangles.Add(startIndex + 0);
-                }
-                else
-                {
-                    wallTriangles.Add(startIndex + 0);
-                    wallTriangles.Add(startIndex + 3);
-                    wallTriangles.Add(startIndex + 1);
-
-                    wallTriangles.Add(startIndex + 0);
-                    wallTriangles.Add(startIndex + 2);
-                    wallTriangles.Add(startIndex + 3);
+                    triangles.Add(startIndex + 0);
+                    triangles.Add(startIndex + 3);
+                    triangles.Add(startIndex + 1);
+					
+                    triangles.Add(startIndex + 0);
+                    triangles.Add(startIndex + 2);
+                    triangles.Add(startIndex + 3);
                 }
             }
         }
-        wallMesh.vertices = wallVertices.ToArray();
-        wallMesh.triangles = wallTriangles.ToArray(); //add gamebject child with mesh
+        wallMesh.vertices = vertices.ToArray();
+        wallMesh.triangles = triangles.ToArray(); //add gamebject child with mesh
         wallMesh.uv = uv.ToArray();
         wallMesh.RecalculateNormals();
 
-        GameObject x = new GameObject("Wall", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+        GameObject x = new GameObject("Wall", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider)); //child object setup
         x.GetComponent<MeshFilter>().mesh = wallMesh;
         x.GetComponent<MeshCollider>().sharedMesh = wallMesh;
         x.GetComponent<MeshRenderer>().material = cell.obj.GetComponent<MeshRenderer>().material;
@@ -218,11 +195,26 @@ public class HexMap : MonoBehaviour
         x.transform.SetParent(cell.obj.transform);
         x.transform.localPosition = Vector3.zero;
         x.tag = cell.type == "F" ? "Wall" : "noClimbWall";
-
+    }
+    private static Vector3[] getCorners(hexCell cell) {
+        return new Vector3[] //hexagon coordinates from centre + maxheight of point neighbours + self
+        {
+            new Vector3(0f, Math.Max(Math.Max(cell.height, getHeight(cell, 1)), getHeight(cell, 2)), cell.outerRadius()),
+            new Vector3(cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 2)), getHeight(cell, 3)), 0.5f * cell.outerRadius()),
+            new Vector3(cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 3)), getHeight(cell,4)), -0.5f * cell.outerRadius()),
+            new Vector3(0f, Math.Max(Math.Max(cell.height, getHeight(cell, 4)), getHeight(cell, 5)), -cell.outerRadius()),
+            new Vector3(-cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 5)), getHeight(cell, 6)), -0.5f * cell.outerRadius()),
+            new Vector3(-cell.innerRadius, Math.Max(Math.Max(cell.height, getHeight(cell, 6)), getHeight(cell, 1)), 0.5f * cell.outerRadius()),
+            new Vector3(0f, Math.Max(Math.Max(cell.height, getHeight(cell, 1)), getHeight(cell, 2)), cell.outerRadius())
+        };
+    }
+    private static bool heightOverPoint(hexCell cell, Vector3 v)
+    {
+        return cell.height >= v.y;
     }
     private static float getHeight(hexCell cell, int c = 0)
     {
-        bool xOverMax = cell.x + 1 > map.GetLength(0) - 1, xUnderMin = cell.x - 1 < 0, yOverMax = cell.y + 1 > map.GetLength(1) - 1, yUnderMin = cell.y - 1 < 0; //stops out of range exceptions=
+        bool xOverMax = cell.x + 1 > map.GetLength(0) - 1, xUnderMin = cell.x - 1 < 0, yOverMax = cell.y + 1 > map.GetLength(1) - 1, yUnderMin = cell.y - 1 < 0; //stops out of range exceptions
         if (cell.y % 2 != 0)
         {
             switch (c)
@@ -260,7 +252,8 @@ public class HexMap : MonoBehaviour
             }
         }
     }
-    private static UnityEngine.Object assignObject(string obj, UnityEngine.Object[] objs)
+
+    private static UnityEngine.Object assignObject(string obj, UnityEngine.Object[] objs) //return associated object to assign
     {
         int i = 0;
         bool ps = false;
@@ -292,15 +285,13 @@ public class HexMap : MonoBehaviour
 
 internal class hexCell
 {
-    [SerializeField]
     internal string type = string.Empty, tObject = string.Empty, landType = string.Empty;
     internal GameObject obj = null;
-    [SerializeField]
     internal int x = 0, y = 0;
     internal float innerRadius = 1;
     internal float outerRadius()
     {
-        return innerRadius + (1547 / 10000);
+        return innerRadius + (innerRadius* 0.1547f);
     }
     internal int height = 0;
 }
