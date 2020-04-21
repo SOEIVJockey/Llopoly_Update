@@ -2,20 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HexMap : MonoBehaviour
+internal class HexMap : MonoBehaviour
 {
-    private static char delimeter = ',';
-    private static hexCell[,] map;
-    private static hexCell cell;
+    internal static char delimeter = ',';
+    internal static hexCell[,] map;
+    internal static hexCell cell;
+    internal static string path = "Assets/Resources/Map/", matsPath = "Materials", mapPath = "TextMaps/", physicsPath = "Physics", objectsPath = "Objects", mapName = "";
     private static UnityEngine.Object[] mats = new UnityEngine.Object[0], pMats = mats, prefabs = mats;
     private static string shader = "Standard";
     private static Transform parentMap;
 
-    internal static void LoadMap(Transform t, string sysPath, string texturesAndPhysicsPath)//call this to load map
+    internal static void loadMap(Transform t, string mn)//call this to load map
     {
+        mapName = mn;
         parentMap = t;
-        readMap(sysPath); //setup cells (do not call global hexCell cell until this is done)     
-        loadTexturesAndPhysicsPrefabs(texturesAndPhysicsPath);
+        readMap(); //setup cells (do not call global hexCell cell until this is done)     
+        loadTexturesAndPhysicsPrefabs();
         foreach (hexCell c in map) //apply mesh's
         {
             cell = c;
@@ -56,19 +58,20 @@ public class HexMap : MonoBehaviour
             }
             cell.obj.transform.SetParent(parentMap);
         }
+        cell = null;
     }
 
-    private static void loadTexturesAndPhysicsPrefabs(string path)
+    private static void loadTexturesAndPhysicsPrefabs()
     {
-        mats = Resources.LoadAll(path + "Materials");
-        pMats = Resources.LoadAll(path + "Physics");
-        prefabs = Resources.LoadAll(path + "Objects");
+        mats = Resources.LoadAll(path + matsPath);
+        pMats = Resources.LoadAll(path + physicsPath);
+        prefabs = Resources.LoadAll(path + objectsPath);
     }
 
-    private static void readMap(string path)
+    private static void readMap()
     {
         int mapHeight = 0, mapWidth = 1;
-        string[] lines = System.IO.File.ReadAllLines(path);
+        string[] lines = System.IO.File.ReadAllLines(path + mapPath + mapName);
         foreach (string line in lines) //mapheight is no. of lines
         {
             mapHeight++;
@@ -96,7 +99,7 @@ public class HexMap : MonoBehaviour
                     y = j
                 };
                 map[i, j].obj = (map[i, j].type == "X") ? new GameObject("HexCell:" + i + delimeter + j, typeof(MeshFilter), typeof(MeshRenderer), typeof(CapsuleCollider))
-                                                        : new GameObject("HexCell:" + i + delimeter + j + delimeter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+                                                        : new GameObject("HexCell:" + i + delimeter + j, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
                 map[i, j].obj.GetComponent<Renderer>().material.shader = Shader.Find(shader);
             }
         }
@@ -283,17 +286,4 @@ public class HexMap : MonoBehaviour
         }
         return null;
     }
-}
-
-internal class hexCell
-{
-    internal string type = string.Empty, tObject = string.Empty, landType = string.Empty;
-    internal GameObject obj = null;
-    internal int x = 0, y = 0;
-    internal float innerRadius = 1;
-    internal float outerRadius()
-    {
-        return innerRadius + (innerRadius* 0.1547f);
-    }
-    internal int height = 0;
 }
