@@ -163,43 +163,46 @@ public class HexMap : MonoBehaviour
         for (int i = 0; i < 6; i++)
         {
             int startIndex = wallVertices.Count;
-            wallVertices.Add(corners[i]); // left
-            wallVertices.Add(corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
-            uv.Add(corners[i]); // left
-            uv.Add(corners[i] + ((cell.height > corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
-            if (i != 5)
+            if (corners[i] != corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y))))
             {
-                wallVertices.Add(corners[1 + i]);// right            
-                wallVertices.Add(corners[1 + i] + ((cell.height >= corners[1 + i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[1 + i].y)))); // bottom right
-                uv.Add(corners[1 + i]);
-                uv.Add(corners[1 + i] + ((cell.height > corners[1 + i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[1 + i].y)))); // bottom right
-            }
-            else
-            {
-                wallVertices.Add(corners[0]);// right
-                wallVertices.Add(corners[0] + ((cell.height >= corners[0].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[0].y)))); // bottom right
-                uv.Add(corners[0]);// right
-                uv.Add(corners[0] + ((cell.height >= corners[0].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[0].y)))); // bottom right
-            }
-            if (cell.height >= corners[0].y)
-            {
-                wallTriangles.Add(startIndex + 3);
-                wallTriangles.Add(startIndex + 2);
-                wallTriangles.Add(startIndex + 0);
+                wallVertices.Add(corners[i]); // left
+                wallVertices.Add(corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
+                uv.Add(corners[i]); // left
+                uv.Add(corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
+                if (i != 5)
+                {
+                    wallVertices.Add(corners[1 + i]);// right            
+                    wallVertices.Add(corners[1 + i] + ((cell.height >= corners[1 + i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[1 + i].y)))); // bottom right
+                    uv.Add(corners[1 + i]);
+                    uv.Add(corners[1 + i] + ((cell.height >= corners[1 + i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[1 + i].y)))); // bottom right
+                }
+                else
+                {
+                    wallVertices.Add(corners[0]);// right
+                    wallVertices.Add(corners[0] + ((cell.height >= corners[0].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[0].y)))); // bottom right
+                    uv.Add(corners[0]);// right
+                    uv.Add(corners[0] + ((cell.height >= corners[0].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[0].y)))); // bottom right
+                }
+                if (cell.height >= corners[0].y)
+                {
+                    wallTriangles.Add(startIndex + 3);
+                    wallTriangles.Add(startIndex + 2);
+                    wallTriangles.Add(startIndex + 0);
 
-                wallTriangles.Add(startIndex + 1);
-                wallTriangles.Add(startIndex + 3);
-                wallTriangles.Add(startIndex + 0);
-            }
-            else
-            {
-                wallTriangles.Add(startIndex + 0);
-                wallTriangles.Add(startIndex + 3);
-                wallTriangles.Add(startIndex + 1);
+                    wallTriangles.Add(startIndex + 1);
+                    wallTriangles.Add(startIndex + 3);
+                    wallTriangles.Add(startIndex + 0);
+                }
+                else
+                {
+                    wallTriangles.Add(startIndex + 0);
+                    wallTriangles.Add(startIndex + 3);
+                    wallTriangles.Add(startIndex + 1);
 
-                wallTriangles.Add(startIndex + 0);
-                wallTriangles.Add(startIndex + 2);
-                wallTriangles.Add(startIndex + 3);
+                    wallTriangles.Add(startIndex + 0);
+                    wallTriangles.Add(startIndex + 2);
+                    wallTriangles.Add(startIndex + 3);
+                }
             }
         }
         wallMesh.vertices = wallVertices.ToArray();
