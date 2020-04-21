@@ -163,7 +163,7 @@ public class HexMap : MonoBehaviour
         for (int i = 0; i < 6; i++)
         {
             int startIndex = wallVertices.Count;
-            if (corners[i] != corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y))))
+            if (corners[i] != corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))) //if i am highest i am equal which is fine unless i am actually equal and my height is 0
             {
                 wallVertices.Add(corners[i]); // left
                 wallVertices.Add(corners[i] + ((cell.height >= corners[i].y) ? -(Vector3.up * cell.height) : (Vector3.up * (cell.height - corners[i].y)))); // bottom left
