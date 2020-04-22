@@ -9,10 +9,13 @@ public class Camera_Follow : MonoBehaviour
     public float pitch; //u/d
     public float scroll; //Mouse wheel
     public float rotationSpeed;
+    public float autoRotateModifier;
     public float zoomSpeed;
+    float yRotation;
     
     public Transform obstruction;
-    public GameObject cameraReference;
+    public Transform cameraReference;
+
 
 
     // Start is called before the first frame update
@@ -26,15 +29,18 @@ public class Camera_Follow : MonoBehaviour
 
     void Update()
     {
-        
+        yRotation = cameraReference.rotation.y;
     }
 
     void FixedUpdate()
     {
         CamControl();
-        //ViewObstructed(); - Basic Script for seeing through walls.
         scroll = Input.GetAxis("Mouse ScrollWheel");
         transform.Translate(0, 0, scroll * Time.deltaTime * zoomSpeed);
+        if(!(yRotation % 45 == 0))
+        {
+            CameraSnap();
+        }           
     }
 
     // Update is called once per frame
@@ -46,57 +52,34 @@ public class Camera_Follow : MonoBehaviour
 
     void CamControl() //Reposition camera on middle mouse down.
     {        
-        if (Input.GetButton("Fire3"))
+        if (Input.GetButton("Fire3")) // This case is only neccessary until the new camera type (Using q and e) is implemented.
         {
             if(Input.GetKey("q"))
             {
-                target.localRotation = Quaternion.Euler(0, 1.414f, 0);
+                //Rotate the player camera -45 degrees about the y-axis.
             }
             if(Input.GetKey("e"))
             {
-
+                //Rotate the player camera 45 degrees about the y-axis.
             }
 
-            /* CAMERA FREE-LOOK
-             * 
-             * yaw += Input.GetAxis("Mouse X") * rotationSpeed * Time.deltaTime;
-             * pitch -= Input.GetAxis("Mouse Y") * rotationSpeed * Time.deltaTime;
-             * pitch = Mathf.Clamp(pitch, 0, 50);                                
-             * target.rotation = Quaternion.Euler(pitch, yaw, 0);
-             * player.rotation = Quaternion.Euler(0, yaw, 0);
-             *
-             */
-
+            // CAMERA FREE-LOOK - Will be stripped out when above code is done.
             yaw += Input.GetAxis("Mouse X") * rotationSpeed * Time.fixedDeltaTime;
             pitch -= Input.GetAxis("Mouse Y") * rotationSpeed * Time.fixedDeltaTime;
-            pitch = Mathf.Clamp(pitch, 0, 50);                                
+            pitch = Mathf.Clamp(pitch, -20, 20);                                
             target.rotation = Quaternion.Euler(pitch, yaw, 0);
             player.rotation = Quaternion.Euler(0, yaw, 0);
         }
     }
+    void CameraSnap()
+    {
+        float temp;
+        float targetRotation;
+        float currentRotation = cameraReference.rotation.y;
+        targetRotation = ((int)(currentRotation/45))*45;
 
-    void ViewObstructed()
-    {        
-        if (Physics.Raycast(transform.position, target.position - transform.position, out RaycastHit hit, 4.5f))
-        {
-            if (hit.collider.gameObject.tag != "Player")
-            {
-                obstruction = hit.transform;
-                obstruction.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
 
-                if (Vector3.Distance(obstruction.position, transform.position) >= 3f && Vector3.Distance(transform.position, target.position) >= 1.5f)
-                {
-                    transform.Translate(Vector3.forward * zoomSpeed * Time.deltaTime);
-                }
-            }
-            else
-            {
-                obstruction.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                if (Vector3.Distance(transform.position, target.position) < 4.5f)
-                {
-                    transform.Translate(Vector3.back * zoomSpeed * Time.deltaTime);
-                }
-            }
-        }        
+        temp = Mathf.MoveTowards(cameraReference.rotation.y, targetRotation, rotationSpeed*Time.fixedDeltaTime*autoRotateModifier);
+        player.rotation = Quaternion.Euler(0, temp, 0);
     }
 }

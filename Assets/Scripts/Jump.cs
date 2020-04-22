@@ -8,9 +8,9 @@ public class Jump : MonoBehaviour
     public float jumpVelocity;
     public float fallMultiplier = 2.2f;
     public float lowJumpMultiplier = 2f;
-    bool isGrounded;
-    bool doubleJumpUsed;
-
+    bool isGrounded=true;
+    bool doubleJumpUsed=false;
+    public GameObject attackring;
     Vector3 AOVelocity;
 
     public GameObject attackRing;
@@ -19,20 +19,16 @@ public class Jump : MonoBehaviour
 
     void Awake()
     {
-        isGrounded = true;
-        doubleJumpUsed = false;
     }
 
     void Start()
-    {
-        
+    {  
     }
 
     // Update is called once per frame.
     void Update()
     {
-        if (isGrounded) attackRing.SetActive(true);
-        if (!isGrounded) attackRing.SetActive(false);
+        attackRing.SetActive(isGrounded);
 
         //While repositioning the camera, negate jump.
         if(Input.GetButtonDown("Fire3"))

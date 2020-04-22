@@ -4,48 +4,46 @@ using UnityEngine;
 
 public class Player_Behaviour : MonoBehaviour
 {
-    public float playerSpeed;
-
-    public Rigidbody projectile1;
+    public float currentPlayerSpeed;
     Rigidbody playerRigidbody;
-    public Transform projectileSpawn;
 
     public float horizontal;
     public float vertical;
 
-    bool sprinting;
-    bool sneaking;
-    bool climbing;
-    bool readiedUp;
-    bool cameraActive;
-    bool collidingWall;
+    //Player movement state flags
+    bool sprinting=false;
+    bool sneaking=false;
+    bool climbing = false;
+    bool readiedUp=false;
+    bool cameraActive=false;
+    bool collidingWall=false;
 
-    public float doubleTapSpeed = 0.5f; //in seconds
-    public float timer;
-    public int doubleTapKey;
+    //Magic numbers for movement speeds.
+    const float stationarySpeed = 0f;
+    const float sneakSpeed = 2.5f;
+    const float walkSpeed = 4f;
+    const float runSpeed = 6f;
 
-    public GameObject attackRing;
+    //Double-Tap code.
+    const float doubleTapSpeed = 0.5f; //in seconds
+    float timer = 10;
+    public int doubleTapKey = 0;
+    public KeyCode doubleT;
 
     // Start is called before the first frame update
     void Awake()
     {
         playerRigidbody = GetComponent<Rigidbody>();
-        timer = 10;
-        doubleTapKey = 0;
+
     }
 
     // Update is called once per frame
     void Update()
     {
         timer += Time.deltaTime;
-        /*
-        if (Input.GetButtonDown("Fire1"))
-        {
-            Rigidbody projectile1Instance;
-            projectile1Instance = Instantiate(projectile1, projectileSpawn.position, projectileSpawn.rotation) as Rigidbody;
-            projectile1Instance.AddForce(projectileSpawn.forward * 1000);
-        }
-        */       
+
+        //Interact
+        //Inventory 
     }
 
     void FixedUpdate()
@@ -54,16 +52,13 @@ public class Player_Behaviour : MonoBehaviour
         horizontal = Input.GetAxis("Horizontal");
         if(!climbing)
         {
-            playerRigidbody.transform.Translate(horizontal * playerSpeed * Time.deltaTime, 0, vertical * playerSpeed * Time.deltaTime);
+            playerRigidbody.transform.Translate(horizontal * currentPlayerSpeed * Time.deltaTime, 0, vertical * currentPlayerSpeed * Time.deltaTime);
         }
         else if (climbing)
         {
-            playerRigidbody.transform.Translate(horizontal * playerSpeed * Time.deltaTime, vertical * playerSpeed * Time.deltaTime, 0);
+            playerRigidbody.transform.Translate(horizontal * currentPlayerSpeed * Time.deltaTime, vertical * currentPlayerSpeed * Time.deltaTime, 0);
 
         }
-
-        //Interact
-        //Inventory        
     }
 
     void LateUpdate()
@@ -73,14 +68,12 @@ public class Player_Behaviour : MonoBehaviour
         {
             if (Input.GetButtonDown("Fire3"))
             {
-                playerSpeed = 0;
-                attackRing.SetActive(false);
+                currentPlayerSpeed = 0;
                 cameraActive = true;
             }
             if (Input.GetButtonUp("Fire3"))
             {
-                playerSpeed = 4f;
-                attackRing.SetActive(true);
+                currentPlayerSpeed = walkSpeed;
                 cameraActive = false;
             }
         }
@@ -130,27 +123,27 @@ public class Player_Behaviour : MonoBehaviour
             {
                 if(!climbing)
                 {
-                    playerSpeed = 6f;
+                    currentPlayerSpeed = runSpeed;
                     sprinting = true;
                 }
             }
             if (Input.GetKeyUp("left shift"))
             {
-                if (!sneaking) playerSpeed = 4f;
+                if (!sneaking) currentPlayerSpeed = walkSpeed;
 
-                else if (sneaking) playerSpeed = 2.5f;
+                else if (sneaking) currentPlayerSpeed = sneakSpeed;
                 sprinting = false;
             }
             //Sneaking
             if (Input.GetKeyDown("left ctrl"))
             {
-                playerSpeed = 2.5f;
+                currentPlayerSpeed = sneakSpeed;
                 sneaking = true;
             }
             if (Input.GetKeyUp("left ctrl"))
             {
-                if (!sprinting) playerSpeed = 4f;
-                else if (sprinting) playerSpeed = 6f;
+                if (!sprinting) currentPlayerSpeed = walkSpeed;
+                else if (sprinting) currentPlayerSpeed = runSpeed;
                 sneaking = false;
             }
         }
@@ -158,19 +151,19 @@ public class Player_Behaviour : MonoBehaviour
         //Climbing
         if(sprinting) sprinting = !sprinting;
         if (sneaking) sneaking = !sneaking;
-        playerSpeed = 4f;
+        currentPlayerSpeed = 4f;
         if (Input.GetKey("space") && collidingWall)
         {
             climbing = true;
             playerRigidbody.useGravity = false;
             playerRigidbody.velocity = Vector3.zero;
         }
-        else if (Input.GetKey("space") && !collidingWall)
+        if (Input.GetKey("space") && !collidingWall)
         {
             climbing = false;
             playerRigidbody.useGravity = true;
         }
-        else if (Input.GetKeyUp("space"))
+        if (Input.GetKeyUp("space"))
         {
             playerRigidbody.useGravity = true;
             climbing = false;

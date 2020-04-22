@@ -7,12 +7,12 @@ public class Daylight_Behavior : MonoBehaviour
     public Transform sun;
     public Light sunSettings;
     public float sunSpeed;
-    float rotateSun;
+    float rotateSun=0;
 
     // Start is called before the first frame update
     void Start()
     {
-        rotateSun = 0;
+        
     }
 
     // Update is called once per frame
