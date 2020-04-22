@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 internal class HexMap : MonoBehaviour
@@ -41,11 +42,11 @@ internal class HexMap : MonoBehaviour
                     cell.obj.GetComponent<MeshCollider>().material = (PhysicMaterial)assignObject(cell.landType, pMats);
                 }
             }
-            cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
             if (flat) //forceflat's need walls
             {
                 addWalls();
             }
+            cell.obj.transform.position = new Vector3(cell.x * cell.innerRadius * 2 + (cell.y % 2 == 0 ? cell.innerRadius : 0), 0, cell.y * 3 / 2f); //must be set after addmesh
             if (cell.tObject != "N") //cell object spawn
             {
                 var g = (GameObject)assignObject(cell.tObject, prefabs);
@@ -108,7 +109,6 @@ internal class HexMap : MonoBehaviour
     private static Mesh addHexMesh(bool flat)
     {
         Mesh mesh = new Mesh();
-        float innerRadius = cell.innerRadius, outerRadius = cell.outerRadius();
         List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uv = new List<Vector2>();
         List<int> triangles = new List<int>();
@@ -132,7 +132,8 @@ internal class HexMap : MonoBehaviour
         {
             if (vertices[i] == cell.obj.transform.localPosition) //set centre point height
             {
-                float x = flat ? cell.height : (getHeight(1) + getHeight(2) + getHeight(3) + getHeight(4) + getHeight(5) + getHeight(6) + cell.height) / 7;
+                float[] heights = new[] { getHeight(1), getHeight(2), getHeight(3), getHeight(4), getHeight(5), getHeight(6), cell.height };
+                float x = flat ? cell.height : (heights.Max() + heights.Min())/2;
                 vertices[i] = new Vector3(vertices[i].x, Math.Max(x, cell.height), vertices[i].y);
             }
         }
@@ -150,6 +151,7 @@ internal class HexMap : MonoBehaviour
         List<int> triangles = new List<int>();
         Mesh wallMesh = new Mesh();
         Vector3[] corners = getCorners();
+
         for (int i = 0; i < 6; i++) //loop through hexagon sides
         {
             int startIndex = vertices.Count;
@@ -251,7 +253,7 @@ internal class HexMap : MonoBehaviour
                 case 4://down right
                     return (!(yUnderMin || xOverMax) && !(map[cell.x + 1, cell.y - 1].type == "F" || map[cell.x + 1, cell.y - 1].type == "U")) ? map[cell.x + 1, cell.y - 1].height : cell.height;
                 case 5:// down left
-                    return (!(xUnderMin || yUnderMin) && !(map[cell.x, cell.y - 1].type == "F" || map[cell.x, cell.y - 1].type == "U")) ? map[cell.x, cell.y - 1].height : cell.height;
+                    return (!(yUnderMin) && !(map[cell.x, cell.y - 1].type == "F" || map[cell.x, cell.y - 1].type == "U")) ? map[cell.x, cell.y - 1].height : cell.height;
                 default://centre left
                     return (!xUnderMin  && !(map[cell.x - 1, cell.y].type == "F" || map[cell.x - 1, cell.y].type == "U")) ? map[cell.x - 1, cell.y].height : cell.height;
             }

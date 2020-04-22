@@ -8,7 +8,7 @@ internal class hexCell
     internal float innerRadius = 1;
     internal float outerRadius()
     {
-        return innerRadius + (innerRadius * 0.1547f);
+        return innerRadius + (1547/10000);
     }
     internal int height = 0;
 }

@@ -14,7 +14,6 @@ public class Camera_Follow : MonoBehaviour
     float yRotation;
     
     public Transform obstruction;
-    public Transform cameraReference;
 
 
 
@@ -29,7 +28,7 @@ public class Camera_Follow : MonoBehaviour
 
     void Update()
     {
-        yRotation = cameraReference.rotation.y;
+        yRotation = Camera.main.transform.rotation.y;
     }
 
     void FixedUpdate()
@@ -75,11 +74,11 @@ public class Camera_Follow : MonoBehaviour
     {
         float temp;
         float targetRotation;
-        float currentRotation = cameraReference.rotation.y;
+        float currentRotation = Camera.main.transform.rotation.y;
         targetRotation = ((int)(currentRotation/45))*45;
 
 
-        temp = Mathf.MoveTowards(cameraReference.rotation.y, targetRotation, rotationSpeed*Time.fixedDeltaTime*autoRotateModifier);
+        temp = Mathf.MoveTowards(Camera.main.transform.rotation.y, targetRotation, rotationSpeed*Time.fixedDeltaTime*autoRotateModifier);
         player.rotation = Quaternion.Euler(0, temp, 0);
     }
 }

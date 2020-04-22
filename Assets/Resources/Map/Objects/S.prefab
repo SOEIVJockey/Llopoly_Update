@@ -1039,7 +1039,7 @@ GameObject:
   - component: {fileID: 586977208568035325}
   - component: {fileID: 586977208568035326}
   m_Layer: 0
-  m_Name: Player
+  m_Name: S
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1053,7 +1053,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 586977208568066348}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.2, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 586977208568163696}
@@ -1129,6 +1129,7 @@ MonoBehaviour:
   jumpVelocity: 4.5
   fallMultiplier: 2.2
   lowJumpMultiplier: 2
+  attackring: {fileID: 0}
   attackRing: {fileID: 586977207780439870}
   playerRigidbody: {fileID: 586977208568035324}
 --- !u!114 &586977208568035326
@@ -1143,15 +1144,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6809831248113c34bbf53ad3158afbf4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerSpeed: 4
-  projectile1: {fileID: 0}
-  projectileSpawn: {fileID: 586977209288328473}
+  currentPlayerSpeed: 0
   horizontal: 0
   vertical: 0
-  doubleTapSpeed: 0.5
-  timer: 0
   doubleTapKey: 0
-  attackRing: {fileID: 586977207780439870}
+  doubleT: 0
 --- !u!1 &586977208568066350
 GameObject:
   m_ObjectHideFlags: 0
@@ -2150,9 +2147,9 @@ MonoBehaviour:
   pitch: 0
   scroll: 0
   rotationSpeed: 120
+  autoRotateModifier: 0
   zoomSpeed: 10
   obstruction: {fileID: 0}
-  cameraReference: {fileID: 586977208581562403}
 --- !u!1 &586977209288328478
 GameObject:
   m_ObjectHideFlags: 0
